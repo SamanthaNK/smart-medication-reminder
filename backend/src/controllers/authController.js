@@ -1,0 +1,102 @@
+import { successResponse } from '../utils/response.js';
+import {
+    registerUser,
+    verifyEmail,
+    loginUser,
+    forgotPassword,
+    resetPassword,
+} from '../services/authService.js';
+
+
+export const register = async (req, res, next) => {
+    try {
+        const { name, email, password, role, preferred_language, city } = req.body;
+
+        if (!name || !email || !password || !role) {
+            return res.status(400).json({
+                status: 'error',
+                errorCode: 'MISSING_FIELDS',
+                message: 'name, email, password and role are required',
+                fieldErrors: [],
+            });
+        }
+
+        const result = await registerUser({ name, email, password, role, preferred_language, city });
+        return successResponse(res, result, 201);
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const verifyEmailAddress = async (req, res, next) => {
+    try {
+        const { token } = req.query;
+        if (!token) {
+            return res.status(400).json({
+                status: 'error',
+                errorCode: 'MISSING_TOKEN',
+                message: 'Verification token is required',
+                fieldErrors: [],
+            });
+        }
+        const result = await verifyEmail(token);
+        return successResponse(res, result);
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const login = async (req, res, next) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({
+                status: 'error',
+                errorCode: 'MISSING_FIELDS',
+                message: 'email and password are required',
+                fieldErrors: [],
+            });
+        }
+        const result = await loginUser({ email, password });
+        return successResponse(res, result);
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const forgotPasswordRequest = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({
+                status: 'error',
+                errorCode: 'MISSING_FIELDS',
+                message: 'email is required',
+                fieldErrors: [],
+            });
+        }
+        const result = await forgotPassword(email);
+        return successResponse(res, result);
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const resetPasswordRequest = async (req, res, next) => {
+    try {
+        const { token } = req.query;
+        const { password } = req.body;
+        if (!token || !password) {
+            return res.status(400).json({
+                status: 'error',
+                errorCode: 'MISSING_FIELDS',
+                message: 'token and new password are required',
+                fieldErrors: [],
+            });
+        }
+        const result = await resetPassword(token, password);
+        return successResponse(res, result);
+    } catch (err) {
+        next(err);
+    }
+};
