@@ -13,6 +13,10 @@ import HomeScreen from '../screens/HomeScreen';
 import ReminderScreen from '../screens/ReminderScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import MissedDoseScreen from '../screens/MissedDoseScreen';
+import VerifyEmailScreen from '../screens/VerifyEmailScreen';
+import VerifySuccessScreen from '../screens/VerifySuccessScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import { theme } from '../utils/theme';
 
 const Stack = createStackNavigator();
@@ -53,6 +57,10 @@ export default function AppNavigator() {
                         <Stack.Screen name="Welcome" component={WelcomeScreen} />
                         <Stack.Screen name="Login" component={LoginScreen} />
                         <Stack.Screen name="Register" component={RegisterScreen} />
+                        <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
+                        <Stack.Screen name="VerifySuccess" component={VerifySuccessScreen} />
+                        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+                        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
                     </>
                 )}
             </Stack.Navigator>

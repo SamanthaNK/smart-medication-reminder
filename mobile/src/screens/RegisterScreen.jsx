@@ -60,7 +60,7 @@ export default function RegisterScreen({ navigation }) {
                 preferred_language: 'en',
                 city: form.city || undefined,
             });
-            setSuccess(true);
+            navigation.navigate('VerifyEmail', { email: form.email });
         } catch (err) {
             setError(err.message || 'Registration failed. Please try again.');
         } finally {
@@ -159,7 +159,7 @@ export default function RegisterScreen({ navigation }) {
                         />
                         <TextInput
                             style={styles.input}
-                            placeholder="e.g. Marie Dupont"
+                            placeholder="e.g. Kim Namjoon"
                             placeholderTextColor={theme.colors.textSecondary}
                             value={form.name}
                             onChangeText={(v) => updateField('name', v)}
@@ -178,7 +178,7 @@ export default function RegisterScreen({ navigation }) {
                         />
                         <TextInput
                             style={styles.input}
-                            placeholder="e.g. marie@example.com"
+                            placeholder="e.g. joon@example.com"
                             placeholderTextColor={theme.colors.textSecondary}
                             value={form.email}
                             onChangeText={(v) => updateField('email', v.toLowerCase().trim())}
