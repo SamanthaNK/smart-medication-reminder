@@ -16,6 +16,8 @@ export const env = {
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
     BCRYPT_ROUNDS: parseInt(process.env.BCRYPT_ROUNDS || '10'),
 
+    VERIFICATION_CODE_EXPIRES_MINUTES: parseInt(process.env.VERIFICATION_CODE_EXPIRES_MINUTES || '15'),
+
     ENCRYPTION_KEY: required('ENCRYPTION_KEY'),
 
     FIREBASE_SERVICE_ACCOUNT_JSON: process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '',
