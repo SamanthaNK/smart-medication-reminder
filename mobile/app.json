@@ -31,7 +31,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
-    ]
+      "expo-font",
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "bc1ebd63-0c15-445c-ae1f-448a24e42da9"
+      }
+    }
   }
 }

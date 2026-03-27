@@ -14,7 +14,6 @@ import { decrypt } from '../utils/encrypt.js';
 const decryptName = (user) => ({ ...user, name: decrypt(user.name) });
 
 export const requestLink = async (caregiverId, patientEmail) => {
-    const patient = await findUserById(null);
     const { findUserByEmail } = await import('../repositories/userRepository.js');
     const patientUser = await findUserByEmail(patientEmail);
 
@@ -31,6 +30,7 @@ export const requestLink = async (caregiverId, patientEmail) => {
     }
 
     const existing = await findLinkByPair(caregiverId, patientUser.id);
+
     if (existing) {
         if (existing.status === 'active') {
             throw new AppError('You are already linked to this patient.', 409, 'ALREADY_LINKED');
@@ -38,10 +38,12 @@ export const requestLink = async (caregiverId, patientEmail) => {
         if (existing.status === 'pending') {
             throw new AppError('A link request is already pending for this patient.', 409, 'REQUEST_PENDING');
         }
+
         const renewed = await updateLinkById(existing.id, {
             status: 'pending',
             linked_at: null,
         });
+
         return { link: renewed };
     }
 
