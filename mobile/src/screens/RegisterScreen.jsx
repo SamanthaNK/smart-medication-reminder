@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import ScreenBackground from '../components/ScreenBackground';
 import { theme } from '../utils/theme';
-import { register } from '../api/authApi';
+import { register } from '../api/api';
 
 const ROLES = [
     { value: 'patient', label: 'Patient', icon: 'person-outline' },

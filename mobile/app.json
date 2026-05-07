@@ -9,17 +9,28 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FDF6EE"
     },
     "updates": {
       "enabled": false
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.medmate.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "MedMate uses the microphone so you can say 'Yes' to confirm you took your medication.",
+        "NSSpeechRecognitionUsageDescription": "MedMate uses speech recognition so you can confirm doses by voice."
+      }
     },
     "android": {
       "package": "com.medmate.app",
       "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "RECORD_AUDIO",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -27,13 +38,22 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       }
     },
+    "assetBundlePatterns": [
+      "assets/**",
+      "assets/audio/*"
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "expo-dev-client",
       "expo-font",
-      "@react-native-firebase/app",
-      "@react-native-firebase/messaging"
+      [
+        "expo-notifications",
+        {
+          "sounds": []
+        }
+      ]
     ],
     "extra": {
       "eas": {

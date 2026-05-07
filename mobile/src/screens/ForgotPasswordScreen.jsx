@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import ScreenBackground from '../components/ScreenBackground';
 import { theme } from '../utils/theme';
-import { forgotPassword } from '../api/authApi';
+import { forgotPassword } from '../api/api';
 
 export default function ForgotPasswordScreen({ navigation }) {
     const [email, setEmail] = useState('');

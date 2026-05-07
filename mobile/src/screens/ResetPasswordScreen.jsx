@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import ScreenBackground from '../components/ScreenBackground';
 import { theme } from '../utils/theme';
-import { resetPassword } from '../api/authApi';
+import { resetPassword } from '../api/api';
 
 export default function ResetPasswordScreen({ navigation, route }) {
     const { email } = route.params;

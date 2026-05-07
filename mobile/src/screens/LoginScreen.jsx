@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import ScreenBackground from '../components/ScreenBackground';
 import { theme } from '../utils/theme';
-import { login } from '../api/authApi';
+import { login } from '../api/api';
 import { useAuthStore } from '../store/authStore';
 
 export default function LoginScreen({ navigation }) {
