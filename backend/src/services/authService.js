@@ -65,7 +65,7 @@ export const registerUser = async ({ name, email, password, role, preferred_lang
         verification_code_expires_at,
     });
 
-    await sendVerificationEmail(email, name, verification_token);
+    await sendVerificationEmail(email, name, verification_token, role);
 
     return {
         message: 'Registration successful. Please check your email for your 6-digit verification code.',
@@ -87,11 +87,19 @@ export const verifyEmail = async (email, code) => {
         );
     }
 
+    const isClinicStaff = user.role === 'clinic_staff';
+
     await updateUserById(user.id, {
-        is_verified: true,
+        is_verified: !isClinicStaff,
         verification_token: null,
         verification_code_expires_at: null,
     });
+
+    if (isClinicStaff) {
+        return {
+            message: 'Email confirmed. Your account is pending admin approval. You will be able to log in once an administrator has verified your account.',
+        };
+    }
 
     return { message: 'Email verified successfully. You can now log in.' };
 };
@@ -111,7 +119,7 @@ export const resendVerificationCode = async (email) => {
     await updateUserById(user.id, { verification_token, verification_code_expires_at });
 
     const userName = decrypt(user.name);
-    await sendVerificationEmail(email, userName, verification_token);
+    await sendVerificationEmail(email, userName, verification_token, user.role);
 
     return { message: 'If that account exists and is unverified, a new code has been sent.' };
 };
@@ -121,6 +129,14 @@ export const loginUser = async ({ email, password }) => {
 
     if (!user) {
         throw new AppError('Invalid email or password', 401, 'INVALID_CREDENTIALS');
+    }
+
+    if (user.role === 'clinic_staff' && !user.is_verified) {
+        throw new AppError(
+            'Your account is pending administrator approval. Please contact your clinic administrator.',
+            401,
+            'PENDING_ADMIN_VERIFICATION'
+        );
     }
 
     if (!user.is_verified) {

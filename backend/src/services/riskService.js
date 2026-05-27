@@ -40,8 +40,8 @@ export const calculateWeeklyRiskScores = async () => {
             week_start: weekStart.toISOString().split('T')[0],
             doses_scheduled: total,
             doses_taken: taken,
-            adherence_pct: adherencePct,
-            risk_tier: riskTier,
+            score: adherencePct,
+            tier: riskTier,
             calculated_at: now.toISOString(),
         }, { onConflict: 'patient_id,week_start' });
 

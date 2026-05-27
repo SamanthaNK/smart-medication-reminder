@@ -48,6 +48,8 @@ export default function ReminderScreen({ navigation, route }) {
     const [wasQueued, setWasQueued] = useState(false);
     const [error, setError] = useState(null);
     const [voiceState, setVoiceState] = useState(VOICE_STATE.IDLE);
+    const [cardPhase, setCardPhase] = useState(true);
+    const [countdown, setCountdown] = useState(30);
 
     const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -75,6 +77,21 @@ export default function ReminderScreen({ navigation, route }) {
             pulseAnim.setValue(1);
         }
     }, [voiceState]);
+
+    useEffect(() => {
+        if (!cardPhase) return;
+        const interval = setInterval(() => {
+            setCountdown(prev => {
+                if (prev <= 1) {
+                    clearInterval(interval);
+                    setCardPhase(false);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [cardPhase]);
 
     const handleConfirm = async (byVoice = false) => {
         if (!doseEvent?.id || isConfirming) return;

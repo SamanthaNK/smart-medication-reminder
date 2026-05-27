@@ -8,7 +8,7 @@ import { findLinkByPair } from '../repositories/linkRepository.js';
 import { findActiveCaregiversByPatient } from '../repositories/linkRepository.js';
 import { findUserById } from '../repositories/userRepository.js';
 import { createAlert } from '../repositories/alertRepository.js';
-import { countConsecutiveMissedDoses } from '../repositories/alertRepository.js';
+import { countConsecutiveMissedDoses, countMissedDosesInLastSevenDays } from '../repositories/alertRepository.js';
 import { decrypt } from '../utils/encrypt.js';
 import {
     sendPushToCaregiver,
@@ -88,7 +88,8 @@ const notifyCaregiversOfMissedDose = async (patientId, event, missedReason) => {
     const caregiverLinks = await findActiveCaregiversByPatient(patientId);
 
     const consecutiveMissed = await countConsecutiveMissedDoses(patientId);
-    const escalate = shouldEscalateToEmail(consecutiveMissed);
+    const sevenDayMissed = await countMissedDosesInLastSevenDays(patientId);
+    const escalate = shouldEscalateToEmail(consecutiveMissed, sevenDayMissed);
 
     for (const link of caregiverLinks) {
         await createAlert({

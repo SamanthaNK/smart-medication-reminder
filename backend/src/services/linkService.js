@@ -9,6 +9,7 @@ import {
     createLink,
     updateLinkById,
 } from '../repositories/linkRepository.js';
+import { sendPushToCaregiver } from './notificationService.js';
 import { decrypt } from '../utils/encrypt.js';
 
 const decryptName = (user) => ({ ...user, name: decrypt(user.name) });
@@ -52,6 +53,16 @@ export const requestLink = async (caregiverId, patientEmail) => {
         patient_id: patientUser.id,
         status: 'pending',
     });
+
+    const caregiver = await findUserById(caregiverId);
+    const caregiverName = decrypt(caregiver.name);
+
+    await sendPushToCaregiver(
+        patientUser,
+        'New caregiver request',
+        `${caregiverName} wants to be your caregiver. Open MedMate to accept or decline.`,
+        { type: 'link_request', caregiverId }
+    ).catch((err) => console.error('[LINK] Failed to notify patient:', err.message));
 
     return { link };
 };

@@ -9,16 +9,16 @@ export const getClinicDashboard = async () => {
 
     const { data: riskScores, error } = await db
         .from('risk_scores')
-        .select('patient_id, adherence_pct, risk_tier, week_start')
+        .select('patient_id, score, tier, week_start')
         .in('patient_id', patientIds)
         .order('week_start', { ascending: false });
 
     if (error) throw error;
 
     const riskMap = {};
-    for (const score of riskScores) {
-        if (!riskMap[score.patient_id]) {
-            riskMap[score.patient_id] = score;
+    for (const row of riskScores) {
+        if (!riskMap[row.patient_id]) {
+            riskMap[row.patient_id] = row;
         }
     }
 
@@ -33,8 +33,12 @@ export const getClinicDashboard = async () => {
 
     const summary = { total: patients.length, green: 0, amber: 0, red: 0, unscored: 0 };
     for (const p of dashboard) {
-        if (!p.latestRisk) { summary.unscored++; }
-        else { summary[p.latestRisk.risk_tier]++; }
+        if (!p.latestRisk) {
+            summary.unscored++;
+        }
+        else {
+            summary[p.latestRisk.tier]++;
+        }
     }
 
     return { summary, patients: dashboard };

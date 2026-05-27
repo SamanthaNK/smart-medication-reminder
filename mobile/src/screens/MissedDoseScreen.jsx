@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenBackground from '../components/ScreenBackground';
 import { theme } from '../utils/theme';
 import { markDoseMissed } from '../api/api';
+import { speakMissedDosePrompt, stopSpeaking } from '../services/voiceService';
 
 const REASONS = [
     {
@@ -38,6 +39,12 @@ export default function MissedDoseScreen({ navigation, route }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [error, setError] = useState(null);
+
+    useEffect(() => {
+        if (!doseEvent?.medication?.name) return;
+        speakMissedDosePrompt(doseEvent.medication.name).catch(() => { });
+        return () => { stopSpeaking().catch(() => { }); };
+    }, []);
 
     const handleSubmit = async () => {
         if (!selectedReason) {

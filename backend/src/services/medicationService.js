@@ -6,6 +6,10 @@ import {
     updateMedicationById,
 } from '../repositories/medicationRepository.js';
 import { findLinkByPair } from '../repositories/linkRepository.js';
+import { createAuditLog } from '../repositories/auditRepository.js';
+
+const VALID_FREQUENCIES = ['once', 'twice', 'thrice', 'custom'];
+const VALID_SHAPES = ['round', 'oval', 'capsule', 'tablet'];
 
 const assertAccess = async (requesterId, requesterRole, patientId) => {
     if (requesterRole === 'patient') {
@@ -52,6 +56,14 @@ export const createMedicationForPatient = async (requesterId, requesterRole, pat
         );
     }
 
+    if (!VALID_FREQUENCIES.includes(frequency)) {
+        throw new AppError(
+            `Invalid frequency "${frequency}". Allowed values: ${VALID_FREQUENCIES.join(', ')}.`,
+            400,
+            'INVALID_FREQUENCY'
+        );
+    }
+
     if (!Array.isArray(times_of_day) || times_of_day.length === 0) {
         throw new AppError('times_of_day must be a non-empty array of HH:MM strings.', 400, 'INVALID_TIMES');
     }
@@ -61,6 +73,14 @@ export const createMedicationForPatient = async (requesterId, requesterRole, pat
         if (!timeRegex.test(t)) {
             throw new AppError(`Invalid time format "${t}". Use HH:MM (24-hour).`, 400, 'INVALID_TIME_FORMAT');
         }
+    }
+
+    if (pill_shape && !VALID_SHAPES.includes(pill_shape)) {
+        throw new AppError(
+            `Invalid pill shape "${pill_shape}". Allowed values: ${VALID_SHAPES.join(', ')}.`,
+            400,
+            'INVALID_SHAPE'
+        );
     }
 
     const medication = await createMedication({
@@ -80,6 +100,14 @@ export const createMedicationForPatient = async (requesterId, requesterRole, pat
         pill_notes: pill_notes || null,
     });
 
+    await createAuditLog({
+        actorId: requesterId,
+        entityType: 'medication',
+        entityId: medication.id,
+        action: 'create',
+        details: { name: medication.name, patientId },
+    });
+
     return { medication };
 };
 
@@ -96,6 +124,7 @@ export const editMedication = async (requesterId, requesterRole, medicationId, b
         'times_of_day', 'start_date', 'end_date', 'notes',
         'is_active', 'pill_colour', 'pill_shape', 'pill_notes',
     ];
+
     const updates = {};
     for (const key of allowedUpdates) {
         if (body[key] !== undefined) updates[key] = body[key];
@@ -103,6 +132,22 @@ export const editMedication = async (requesterId, requesterRole, medicationId, b
 
     if (Object.keys(updates).length === 0) {
         throw new AppError('No valid fields provided for update.', 400, 'NO_CHANGES');
+    }
+
+    if (updates.frequency && !VALID_FREQUENCIES.includes(updates.frequency)) {
+        throw new AppError(
+            `Invalid frequency "${updates.frequency}". Allowed values: ${VALID_FREQUENCIES.join(', ')}.`,
+            400,
+            'INVALID_FREQUENCY'
+        );
+    }
+
+    if (updates.pill_shape && !VALID_SHAPES.includes(updates.pill_shape)) {
+        throw new AppError(
+            `Invalid pill shape "${updates.pill_shape}". Allowed values: ${VALID_SHAPES.join(', ')}.`,
+            400,
+            'INVALID_SHAPE'
+        );
     }
 
     if (updates.times_of_day) {
@@ -115,6 +160,15 @@ export const editMedication = async (requesterId, requesterRole, medicationId, b
     }
 
     const updated = await updateMedicationById(medicationId, updates);
+
+    await createAuditLog({
+        actorId: requesterId,
+        entityType: 'medication',
+        entityId: medicationId,
+        action: 'update',
+        details: updates,
+    });
+
     return { medication: updated };
 };
 
@@ -124,8 +178,25 @@ export const deactivateMedication = async (requesterId, requesterRole, medicatio
         throw new AppError('Medication not found.', 404, 'NOT_FOUND');
     }
 
+    if (requesterRole === 'caregiver') {
+        throw new AppError(
+            'Caregivers cannot deactivate medications. Ask the patient or clinic staff.',
+            403,
+            'FORBIDDEN'
+        );
+    }
+
     await assertAccess(requesterId, requesterRole, medication.patient_id);
 
     const updated = await updateMedicationById(medicationId, { is_active: false });
+
+    await createAuditLog({
+        actorId: requesterId,
+        entityType: 'medication',
+        entityId: medicationId,
+        action: 'delete',
+        details: { name: medication.name },
+    });
+
     return { medication: updated };
 };

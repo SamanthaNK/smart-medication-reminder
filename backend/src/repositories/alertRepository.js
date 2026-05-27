@@ -72,3 +72,15 @@ export const countConsecutiveMissedDoses = async (patientId) => {
     }
     return consecutive;
 };
+
+export const countMissedDosesInLastSevenDays = async (patientId) => {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await db
+        .from('dose_events')
+        .select('id')
+        .eq('patient_id', patientId)
+        .eq('status', 'missed')
+        .gte('scheduled_time', sevenDaysAgo);
+    if (error) throw error;
+    return data.length;
+};

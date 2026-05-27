@@ -93,4 +93,8 @@ export const markDoseMissed = (doseEventId, missedReason) =>
 export const getRiskScore = (patientId) =>
     client.get(`/dose-events/patients/${patientId}/risk`);
 
+// Alerts
+export const getAlerts = () =>
+    client.get('/alerts');
+
 export default client;

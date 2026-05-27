@@ -4,10 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenBackground from '../components/ScreenBackground';
 import { theme } from '../utils/theme';
 import { useAuthStore } from '../store/authStore';
-import { getDoseHistory, getMedications, getPendingLinks, respondToLink, getLinkedPatients, getRiskScore } from '../api/api';
+import { getDoseHistory, getMedications, getPendingLinks, respondToLink, getLinkedPatients, getRiskScore, getAlerts } from '../api/api';
 import { cacheMedications } from '../services/notificationService';
 import { getMorningBriefingScript, playMorningBriefing } from '../services/briefingService';
 import { flushQueue, getQueueCount } from '../services/offlineQueue';
+import { rescheduleAllMedicationReminders, scheduleMorningBriefing } from '../services/localNotificationService';
 
 
 const todayStr = () => new Date().toISOString().split('T')[0];
@@ -228,6 +229,8 @@ function PatientHome({ user, navigation, onOpenBriefing }) {
             setTodayDoses(historyData.history || []);
             setPendingLinks(linksData.links || []);
             await cacheMedications(medsData.medications || []);
+            await rescheduleAllMedicationReminders(medsData.medications || []);
+            await scheduleMorningBriefing();
 
             const count = await getQueueCount();
             setQueueCount(count);
@@ -333,6 +336,13 @@ function PatientHome({ user, navigation, onOpenBriefing }) {
                             <Text style={styles.name}>{user?.name || 'there'}</Text>
                         </View>
                         <View style={styles.topActions}>
+                            <TouchableOpacity
+                                style={styles.iconBtn}
+                                onPress={() => navigation.navigate('Alerts')}
+                                accessibilityLabel="View notifications"
+                            >
+                                <Ionicons name="notifications-outline" size={20} color={theme.colors.primary} />
+                            </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.iconBtn}
                                 onPress={() => navigation.navigate('History')}
@@ -452,6 +462,7 @@ function PatientHome({ user, navigation, onOpenBriefing }) {
 function CaregiverHome({ user, navigation }) {
     const [patients, setPatients] = useState([]);
     const [riskMap, setRiskMap] = useState({});
+    const [alertsByPatient, setAlertsByPatient] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState(null);
@@ -461,9 +472,22 @@ function CaregiverHome({ user, navigation }) {
         if (!silent) setIsLoading(true);
         setError(null);
         try {
-            const data = await getLinkedPatients();
+            const [data, alertsData] = await Promise.all([
+                getLinkedPatients(),
+                getAlerts(),
+            ]);
             const linked = data.patients || [];
             setPatients(linked);
+
+            const alerts = alertsData.alerts || [];
+            const alertMap = {};
+            alerts.forEach((alert) => {
+                if (!alertMap[alert.patient_id]) {
+                    alertMap[alert.patient_id] = [];
+                }
+                alertMap[alert.patient_id].push(alert);
+            });
+            setAlertsByPatient(alertMap);
 
             const riskResults = await Promise.allSettled(
                 linked.map((link) => getRiskScore(link.patient?.id))
@@ -490,8 +514,13 @@ function CaregiverHome({ user, navigation }) {
     const renderPatientCard = ({ item: link }) => {
         const patient = link.patient || {};
         const risk = riskMap[patient.id];
-        const tier = risk?.risk_tier;
-        const adh = risk?.adherence_pct;
+        const tier = risk?.tier;
+        const adh = risk?.score;
+
+        const patientAlerts = alertsByPatient[patient.id] || [];
+        const hasLowStockAlert = patientAlerts.some(
+            (alert) => alert.type === 'low_stock' && !alert.acknowledged_at
+        );
 
         return (
             <View style={styles.patientCard}>
@@ -505,6 +534,12 @@ function CaregiverHome({ user, navigation }) {
                         <Text style={styles.patientName}>{patient.name || 'Patient'}</Text>
                         <Text style={styles.patientSub}>{patient.city || patient.email || ''}</Text>
                     </View>
+
+                    {hasLowStockAlert && (
+                        <View style={styles.lowStockBadge}>
+                            <Ionicons name="warning" size={14} color="#fff" />
+                        </View>
+                    )}
 
                     {tier ? (
                         <View style={[styles.riskBadge, {
@@ -594,6 +629,13 @@ function CaregiverHome({ user, navigation }) {
                             <Text style={styles.name}>{user?.name || 'there'}</Text>
                         </View>
                         <View style={styles.topActions}>
+                            <TouchableOpacity
+                                style={styles.iconBtn}
+                                onPress={() => navigation.navigate('Alerts')}
+                                accessibilityLabel="View notifications"
+                            >
+                                <Ionicons name="notifications-outline" size={20} color={theme.colors.primary} />
+                            </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.iconBtn}
                                 onPress={() => navigation.navigate('RequestPatientLink')}
@@ -1150,6 +1192,16 @@ const styles = StyleSheet.create({
     riskLabel: {
         fontSize: 12,
         fontFamily: 'Nunito_700Bold',
+    },
+
+    lowStockBadge: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: theme.colors.warning,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 8,
     },
 
     adhRow: {
