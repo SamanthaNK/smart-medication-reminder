@@ -7,13 +7,13 @@ import {
 import { findLinkByPair } from '../repositories/linkRepository.js';
 import { findActiveCaregiversByPatient } from '../repositories/linkRepository.js';
 import { findUserById } from '../repositories/userRepository.js';
-import { createAlert } from '../repositories/alertRepository.js';
-import { countConsecutiveMissedDoses, countMissedDosesInLastSevenDays } from '../repositories/alertRepository.js';
+import { createAlert, countConsecutiveMissedDoses, countMissedDosesInLastSevenDays, findClinicStaffIds, findExistingHighRiskAlert } from '../repositories/alertRepository.js';
 import { decrypt } from '../utils/encrypt.js';
 import {
     sendPushToCaregiver,
     buildMissedDoseMessages,
     shouldEscalateToEmail,
+    shouldCreateHighRiskAlert,
 } from './notificationService.js';
 import { sendMissedDoseAlertEmail } from './emailService.js';
 
@@ -119,6 +119,24 @@ const notifyCaregiversOfMissedDose = async (patientId, event, missedReason) => {
                 missedReason,
                 consecutiveMissed
             );
+        }
+    }
+
+    if (shouldCreateHighRiskAlert(sevenDayMissed)) {
+        const existingAlert = await findExistingHighRiskAlert(patientId);
+        if (!existingAlert) {
+            const staffIds = await findClinicStaffIds();
+            for (const staffId of staffIds) {
+                await createAlert({
+                    patient_id: patientId,
+                    caregiver_id: staffId,
+                    type: 'high_risk',
+                    message_en: `${patientName} has missed ${sevenDayMissed} doses in the last 7 days and has been flagged as high risk.`,
+                    message_fr: `${patientName} a manqué ${sevenDayMissed} doses au cours des 7 derniers jours et a été signalé comme à haut risque.`,
+                    missed_reason: missedReason,
+                });
+            }
+            console.log(`[ALERT] High-risk alert created for patient ${patientId} — ${sevenDayMissed} missed doses in 7 days`);
         }
     }
 };

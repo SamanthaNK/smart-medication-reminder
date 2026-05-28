@@ -105,3 +105,7 @@ export const shouldEscalateToEmail = (consecutiveMissed, sevenDayMissed = 0) => 
     const escalateSevenDay = sevenDayMissed >= 3;
     return escalateConsecutive || escalateSevenDay;
 };
+
+export const shouldCreateHighRiskAlert = (sevenDayMissed) => {
+    return sevenDayMissed >= 3;
+};

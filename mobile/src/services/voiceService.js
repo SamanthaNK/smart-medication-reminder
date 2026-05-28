@@ -80,7 +80,16 @@ export const speakMorningBriefing = async (userName, medications) => {
     }
 
     const lines = active.flatMap((m) =>
-        m.times_of_day.map((t) => `${m.name}, ${m.dose_amount} ${m.dose_unit}, at ${t}`)
+        m.times_of_day.map((t) => {
+            const [hourStr, minuteStr] = t.split(':');
+            const hour = parseInt(hourStr, 10);
+            const minute = parseInt(minuteStr, 10);
+            const period = hour < 12 ? 'am' : 'pm';
+            const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+            const displayMinute = minute > 0 ? `:${minuteStr}` : '';
+            const readableTime = `${displayHour}${displayMinute}${period}`;
+            return `${m.name}, ${m.dose_amount} ${m.dose_unit}, at ${readableTime}`;
+        })
     );
 
     const script =

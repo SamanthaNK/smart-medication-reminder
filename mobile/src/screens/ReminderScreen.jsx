@@ -221,6 +221,24 @@ export default function ReminderScreen({ navigation, route }) {
                     )}
                 </View>
 
+                {cardPhase && (
+                    <View style={styles.countdownBanner}>
+                        <Ionicons name="time-outline" size={16} color={theme.colors.info} />
+                        <Text style={styles.countdownText}>
+                            Review your medication — you can confirm in {countdown}s
+                        </Text>
+                    </View>
+                )}
+
+                {!cardPhase && (
+                    <View style={styles.confirmPromptBanner}>
+                        <Ionicons name="checkmark-circle-outline" size={16} color={theme.colors.success} />
+                        <Text style={styles.confirmPromptText}>
+                            Ready to confirm? Tap below.
+                        </Text>
+                    </View>
+                )}
+
                 {voiceState !== VOICE_STATE.UNAVAILABLE && (
                     <View style={styles.voiceHintRow}>
                         <Ionicons name="mic-outline" size={16} color={theme.colors.textSecondary} />
@@ -241,9 +259,12 @@ export default function ReminderScreen({ navigation, route }) {
 
                 <View style={styles.actionArea}>
                     <TouchableOpacity
-                        style={[styles.takenButton, isConfirming && styles.buttonDisabled]}
+                        style={[
+                            styles.takenButton,
+                            (isConfirming || cardPhase) && styles.buttonDisabled,
+                        ]}
                         onPress={() => handleConfirm(false)}
-                        disabled={isConfirming}
+                        disabled={isConfirming || cardPhase}
                         accessibilityLabel="Mark dose as taken"
                     >
                         {isConfirming ? (
@@ -251,7 +272,9 @@ export default function ReminderScreen({ navigation, route }) {
                         ) : (
                             <>
                                 <Ionicons name="checkmark-circle" size={28} color={theme.colors.textOnPrimary} />
-                                <Text style={styles.takenButtonText}>I took it</Text>
+                                <Text style={styles.takenButtonText}>
+                                    {cardPhase ? `I took it  (${countdown}s)` : 'I took it'}
+                                </Text>
                             </>
                         )}
                     </TouchableOpacity>
@@ -262,19 +285,22 @@ export default function ReminderScreen({ navigation, route }) {
                                 style={[
                                     styles.micButton,
                                     voiceState === VOICE_STATE.LISTENING && styles.micButtonActive,
+                                    cardPhase && styles.buttonDisabled,
                                 ]}
                                 onPress={handleVoiceListen}
-                                disabled={isConfirming || voiceState === VOICE_STATE.LISTENING}
+                                disabled={isConfirming || voiceState === VOICE_STATE.LISTENING || cardPhase}
                                 accessibilityLabel="Voice confirmation"
                             >
                                 <Ionicons
                                     name={voiceState === VOICE_STATE.LISTENING ? 'radio-button-on' : 'mic-outline'}
                                     size={22}
-                                    color={voiceState === VOICE_STATE.LISTENING ? theme.colors.textOnPrimary : theme.colors.primary}
+                                    color={voiceState === VOICE_STATE.LISTENING
+                                        ? theme.colors.textOnPrimary
+                                        : theme.colors.primary}
                                 />
                                 <Text style={[
                                     styles.micButtonText,
-                                    voiceState === VOICE_STATE.LISTENING && { color: theme.colors.textOnPrimary }
+                                    voiceState === VOICE_STATE.LISTENING && { color: theme.colors.textOnPrimary },
                                 ]}>
                                     {voiceState === VOICE_STATE.LISTENING ? 'Listening…' : 'Say "Yes"'}
                                 </Text>
@@ -508,5 +534,39 @@ const styles = StyleSheet.create({
     primaryButtonText: {
         ...theme.font.button,
         color: theme.colors.textOnPrimary
+    },
+    countdownBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.sm,
+        backgroundColor: theme.colors.infoBg,
+        borderWidth: 1,
+        borderColor: theme.colors.infoBorder,
+        borderRadius: theme.radius.badge,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        marginBottom: theme.spacing.md,
+    },
+    countdownText: {
+        ...theme.font.caption,
+        color: theme.colors.info,
+        flex: 1,
+    },
+    confirmPromptBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.sm,
+        backgroundColor: theme.colors.successBg,
+        borderWidth: 1,
+        borderColor: theme.colors.successBorder,
+        borderRadius: theme.radius.badge,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        marginBottom: theme.spacing.md,
+    },
+    confirmPromptText: {
+        ...theme.font.caption,
+        color: theme.colors.success,
+        flex: 1,
     },
 });

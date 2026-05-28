@@ -4,10 +4,10 @@
     "slug": "medmate-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon-small.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#FDF6EE"
     },
@@ -32,9 +32,7 @@
       ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/icon.png"
       }
     },
     "assetBundlePatterns": [
@@ -42,7 +40,7 @@
       "assets/audio/*"
     ],
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-dev-client",
@@ -52,7 +50,8 @@
         {
           "sounds": []
         }
-      ]
+      ],
+      "@react-native-voice/voice"
     ],
     "extra": {
       "eas": {

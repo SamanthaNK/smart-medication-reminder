@@ -84,3 +84,27 @@ export const countMissedDosesInLastSevenDays = async (patientId) => {
     if (error) throw error;
     return data.length;
 };
+
+export const findClinicStaffIds = async () => {
+    const { data, error } = await db
+        .from('users')
+        .select('id')
+        .eq('role', 'clinic_staff')
+        .eq('is_verified', true);
+    if (error) throw error;
+    return data.map((u) => u.id);
+};
+
+export const findExistingHighRiskAlert = async (patientId) => {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await db
+        .from('alerts')
+        .select('id')
+        .eq('patient_id', patientId)
+        .eq('type', 'high_risk')
+        .gte('created_at', sevenDaysAgo)
+        .limit(1)
+        .single();
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
+};

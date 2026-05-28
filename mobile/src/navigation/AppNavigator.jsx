@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { ActivityIndicator, View, Platform } from 'react-native';
+import { ActivityIndicator, View, Text, TouchableOpacity, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -38,7 +38,7 @@ Notifications.setNotificationHandler({
 async function registerForPushNotifications() {
     const isExpoGo = Constants.appOwnership === 'expo';
     if (isExpoGo) {
-        console.log('[PUSH] Running in Expo Go — remote push tokens are not supported. Skipping registration.');
+        console.log('[PUSH] Running in Expo Go — remote push tokens not supported. Skipping.');
         return null;
     }
 
@@ -61,7 +61,7 @@ async function registerForPushNotifications() {
     }
 
     if (finalStatus !== 'granted') {
-        console.log('[PUSH] Notification permission denied — push alerts disabled.');
+        console.log('[PUSH] Notification permission denied.');
         return null;
     }
 
@@ -74,11 +74,10 @@ async function registerForPushNotifications() {
         const tokenData = await Notifications.getExpoPushTokenAsync(
             projectId ? { projectId } : undefined
         );
-
         console.log('[PUSH] Expo push token obtained:', tokenData.data.slice(0, 30) + '...');
         return tokenData.data;
     } catch (err) {
-        console.log('[PUSH] Could not obtain push token (expected in dev):', err.message);
+        console.log('[PUSH] Could not obtain push token:', err.message);
         return null;
     }
 }
@@ -87,18 +86,28 @@ function WrongPlatformScreen() {
     const { clearSession } = useAuthStore();
     return (
         <View style={{
-            flex: 1, justifyContent: 'center', alignItems: 'center',
-            paddingHorizontal: 32, backgroundColor: '#FDF6EE'
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingHorizontal: 32,
+            backgroundColor: '#FDF6EE',
         }}>
             <Text style={{
-                fontSize: 22, fontFamily: 'Nunito_700Bold',
-                color: '#1E1033', textAlign: 'center', marginBottom: 12
+                fontSize: 22,
+                fontFamily: 'Nunito_700Bold',
+                color: '#1E1033',
+                textAlign: 'center',
+                marginBottom: 12,
             }}>
                 Wrong Platform
             </Text>
             <Text style={{
-                fontSize: 16, fontFamily: 'Nunito_400Regular',
-                color: '#7C6F9A', textAlign: 'center', lineHeight: 26, marginBottom: 32
+                fontSize: 16,
+                fontFamily: 'Nunito_400Regular',
+                color: '#7C6F9A',
+                textAlign: 'center',
+                lineHeight: 26,
+                marginBottom: 32,
             }}>
                 Clinic staff and administrator accounts are only accessible via the
                 MedMate web dashboard. Please visit the web portal to continue.
@@ -106,25 +115,32 @@ function WrongPlatformScreen() {
             <TouchableOpacity
                 onPress={clearSession}
                 style={{
-                    backgroundColor: '#7C3AED', borderRadius: 50,
-                    paddingVertical: 16, paddingHorizontal: 40
+                    backgroundColor: '#7C3AED',
+                    borderRadius: 50,
+                    paddingVertical: 16,
+                    paddingHorizontal: 40,
                 }}
                 accessibilityLabel="Sign out"
             >
                 <Text style={{
-                    color: '#fff', fontSize: 16,
-                    fontFamily: 'Nunito_700Bold'
-                }}>Sign Out</Text>
+                    color: '#fff',
+                    fontSize: 16,
+                    fontFamily: 'Nunito_700Bold',
+                }}>
+                    Sign Out
+                </Text>
             </TouchableOpacity>
         </View>
     );
 }
 
 export default function AppNavigator() {
-    const { token, isLoading, restoreSession } = useAuthStore();
+    const { token, user, isLoading, restoreSession } = useAuthStore();
+
     const [showSplash, setShowSplash] = useState(true);
     const [showOnboarding, setShowOnboarding] = useState(null);
     const navigationRef = useRef(null);
+
     const notifResponseListener = useRef(null);
     const notifReceivedListener = useRef(null);
 
@@ -157,7 +173,7 @@ export default function AppNavigator() {
         notifReceivedListener.current = Notifications.addNotificationReceivedListener(
             (notification) => {
                 console.log(
-                    '[PUSH] Foreground notification received:',
+                    '[PUSH] Foreground notification:',
                     notification.request.content.title
                 );
             }
@@ -185,10 +201,10 @@ export default function AppNavigator() {
 
         return () => {
             if (notifReceivedListener.current) {
-                Notifications.removeNotificationSubscription(notifReceivedListener.current);
+                notifReceivedListener.current.remove();
             }
             if (notifResponseListener.current) {
-                Notifications.removeNotificationSubscription(notifResponseListener.current);
+                notifResponseListener.current.remove();
             }
         };
     }, [token]);
@@ -210,14 +226,12 @@ export default function AppNavigator() {
 
     if (isLoading || showOnboarding === null) {
         return (
-            <View
-                style={{
-                    flex: 1,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: theme.colors.background,
-                }}
-            >
+            <View style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: theme.colors.background,
+            }}>
                 <ActivityIndicator size="large" color={theme.colors.primary} />
             </View>
         );
@@ -227,12 +241,14 @@ export default function AppNavigator() {
         return <SplashScreen onFinish={() => setShowSplash(false)} />;
     }
 
+    const isWebOnlyRole = user?.role === 'clinic_staff' || user?.role === 'admin';
+
     return (
         <NavigationContainer ref={navigationRef}>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {token ? (
                     <>
-                        {(user?.role === 'clinic_staff' || user?.role === 'admin') ? (
+                        {isWebOnlyRole ? (
                             <Stack.Screen name="WrongPlatform" component={WrongPlatformScreen} />
                         ) : (
                             <>

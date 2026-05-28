@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenBackground from '../components/ScreenBackground';
 import { theme } from '../utils/theme';
 import { createMedication } from '../api/api';
+import { CAMEROONIAN_MEDICATIONS } from '../utils/constants';
 
 const PILL_COLOURS = [
     'white', 'yellow', 'orange', 'pink',
@@ -65,7 +66,35 @@ export default function CreateMedicationScreen({ navigation, route }) {
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState({});
 
+    const [nameSuggestions, setNameSuggestions] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
     const frequencyLabel = FREQUENCIES.find((f) => f.value === frequency)?.label || frequency;
+
+    const handleNameChange = (value) => {
+        setName(value);
+        setErrors((p) => ({ ...p, name: null }));
+
+        if (value.trim().length < 2) {
+            setNameSuggestions([]);
+            setShowSuggestions(false);
+            return;
+        }
+
+        const filtered = CAMEROONIAN_MEDICATIONS.filter((med) =>
+            med.toLowerCase().includes(value.toLowerCase().trim())
+        ).slice(0, 6);
+
+        setNameSuggestions(filtered);
+        setShowSuggestions(filtered.length > 0);
+    };
+
+    const handleSelectSuggestion = (suggestion) => {
+        setName(suggestion);
+        setNameSuggestions([]);
+        setShowSuggestions(false);
+        setErrors((p) => ({ ...p, name: null }));
+    };
 
     const validateForm = () => {
         const e = {};
@@ -196,11 +225,33 @@ export default function CreateMedicationScreen({ navigation, route }) {
                             placeholder="e.g. Paracetamol"
                             placeholderTextColor={theme.colors.textSecondary}
                             value={name}
-                            onChangeText={(v) => { setName(v); setErrors((p) => ({ ...p, name: null })); }}
+                            onChangeText={handleNameChange}
                             editable={!isLoading}
                             accessibilityLabel="Medication name"
+                            autoCorrect={false}
                         />
                         {errors.name && <Text style={styles.errorMsg}>{errors.name}</Text>}
+
+                        {showSuggestions && (
+                            <View style={styles.suggestionsContainer}>
+                                {nameSuggestions.map((suggestion) => (
+                                    <TouchableOpacity
+                                        key={suggestion}
+                                        style={styles.suggestionRow}
+                                        onPress={() => handleSelectSuggestion(suggestion)}
+                                        accessibilityLabel={`Select ${suggestion}`}
+                                    >
+                                        <Ionicons
+                                            name="medical-outline"
+                                            size={14}
+                                            color={theme.colors.textSecondary}
+                                            style={{ marginRight: 8 }}
+                                        />
+                                        <Text style={styles.suggestionText}>{suggestion}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
                     </View>
 
                     <View style={styles.doseRow}>
@@ -650,5 +701,54 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: 'Nunito_600SemiBold',
         color: theme.colors.danger,
+    },
+    suggestionsContainer: {
+        marginTop: theme.spacing.sm,
+        borderRadius: theme.radius.input,
+        borderWidth: 1.5,
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.background,
+        overflow: 'hidden',
+        maxHeight: 240,
+    },
+    suggestionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+    },
+    suggestionText: {
+        fontSize: 14,
+        fontFamily: 'Nunito_400Regular',
+        color: theme.colors.textPrimary,
+        flex: 1,
+    },
+    suggestionsContainer: {
+        backgroundColor: theme.colors.surface,
+        borderWidth: 1.5,
+        borderColor: theme.colors.primary,
+        borderRadius: theme.radius.input,
+        marginTop: 4,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    suggestionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+    },
+    suggestionText: {
+        fontSize: 15,
+        fontFamily: 'Nunito_400Regular',
+        color: theme.colors.textPrimary,
     },
 });

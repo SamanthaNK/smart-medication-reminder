@@ -1,3 +1,76 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+    --brand: #7C3AED;
+    --brand-light: #EDE9FE;
+    --brand-dark: #5B21B6;
+    --bg: #FDF6EE;
+    --surface: #FFFFFF;
+    --border: #E9E0D8;
+    --text-primary: #1E1033;
+    --text-muted: #7C6F9A;
+    --success: #065F46;
+    --success-bg: #ECFDF5;
+    --warning: #92400E;
+    --warning-bg: #FFFBEB;
+    --danger: #9F1239;
+    --danger-bg: #FFF1F2;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background-color: var(--bg);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.font-display {
+    font-family: 'Instrument Serif', Georgia, serif;
+}
+
+.dot-bg {
+    background-image: radial-gradient(circle, #d4c5b0 1px, transparent 1px);
+    background-size: 28px 28px;
+}
+
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d4c5b0;
+    border-radius: 3px;
+}
+
+@media print {
+
+    nav,
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+    }
+
+    .print-table {
+        font-size: 11px;
+    }
+}

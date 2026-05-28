@@ -7,19 +7,12 @@ export const rescheduleAllMedicationReminders = async (medications) => {
     await cancelAllMedicationReminders();
 
     const scheduledIds = [];
-    const now = new Date();
 
     for (const med of medications) {
         if (!med.is_active) continue;
 
         for (const timeStr of med.times_of_day) {
-            const [hours, minutes] = timeStr.split(':').map(Number);
-
-            const trigger = {
-                hour: hours,
-                minute: minutes,
-                repeats: true,
-            };
+            const [hour, minute] = timeStr.split(':').map(Number);
 
             try {
                 const id = await Notifications.scheduleNotificationAsync({
@@ -39,11 +32,17 @@ export const rescheduleAllMedicationReminders = async (medications) => {
                         },
                         sound: 'default',
                     },
-                    trigger,
+
+                    trigger: {
+                        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+                        hour,
+                        minute,
+                        repeats: true,
+                    },
                 });
 
                 scheduledIds.push(id);
-                console.log(`[LOCAL NOTIF] Scheduled ${med.name} at ${timeStr} — id: ${id}`);
+                console.log(`[LOCAL NOTIF] Scheduled ${med.name} at ${timeStr}`);
             } catch (err) {
                 console.error(`[LOCAL NOTIF] Failed to schedule ${med.name}:`, err.message);
             }
@@ -56,8 +55,11 @@ export const rescheduleAllMedicationReminders = async (medications) => {
 
 export const scheduleMorningBriefing = async () => {
     const existing = await AsyncStorage.getItem('morning_briefing_notif_id');
+
     if (existing) {
-        try { await Notifications.cancelScheduledNotificationAsync(existing); } catch (_) { }
+        try {
+            await Notifications.cancelScheduledNotificationAsync(existing);
+        } catch (_) { }
     }
 
     const id = await Notifications.scheduleNotificationAsync({
@@ -67,7 +69,9 @@ export const scheduleMorningBriefing = async () => {
             data: { type: 'morning_briefing' },
             sound: 'default',
         },
+
         trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DAILY,
             hour: 7,
             minute: 0,
             repeats: true,
@@ -75,15 +79,19 @@ export const scheduleMorningBriefing = async () => {
     });
 
     await AsyncStorage.setItem('morning_briefing_notif_id', id);
-    console.log(`[LOCAL NOTIF] Morning briefing scheduled — id: ${id}`);
+    console.log(`[LOCAL NOTIF] Morning briefing scheduled`);
 };
 
 export const cancelAllMedicationReminders = async () => {
     const raw = await AsyncStorage.getItem(SCHEDULED_IDS_KEY);
     const ids = raw ? JSON.parse(raw) : [];
+
     for (const id of ids) {
-        try { await Notifications.cancelScheduledNotificationAsync(id); } catch (_) { }
+        try {
+            await Notifications.cancelScheduledNotificationAsync(id);
+        } catch (_) { }
     }
+
     await AsyncStorage.removeItem(SCHEDULED_IDS_KEY);
     console.log(`[LOCAL NOTIF] Cancelled ${ids.length} scheduled notifications`);
 };

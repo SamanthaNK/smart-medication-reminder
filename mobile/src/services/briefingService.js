@@ -1,6 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { speakMorningBriefing } from './voiceService';
 
+const formatTimeForSpeech = (timeStr) => {
+    const [hourStr, minuteStr] = timeStr.split(':');
+    const hour = parseInt(hourStr, 10);
+    const minute = parseInt(minuteStr, 10);
+    const period = hour < 12 ? 'am' : 'pm';
+    const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+    const displayMinute = minute > 0 ? `:${minuteStr}` : '';
+    return `${displayHour}${displayMinute}${period}`;
+};
+
 const buildScript = (medications, userName) => {
     const greeting = userName ? `Good morning, ${userName}.` : 'Good morning.';
     const active = (medications || []).filter((m) => m.is_active);
@@ -10,7 +20,9 @@ const buildScript = (medications, userName) => {
     }
 
     const lines = active.flatMap((m) =>
-        m.times_of_day.map((t) => `${m.name}, ${m.dose_amount} ${m.dose_unit}, at ${t}`)
+        m.times_of_day.map(
+            (t) => `${m.name}, ${m.dose_amount} ${m.dose_unit}, at ${formatTimeForSpeech(t)}`
+        )
     );
 
     return (

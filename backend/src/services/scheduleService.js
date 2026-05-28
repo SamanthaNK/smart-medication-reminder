@@ -2,22 +2,25 @@ import cron from 'node-cron';
 import { findAllActiveMedications } from '../repositories/medicationRepository.js';
 import { findDoseEventByMedicationAndTime, createManyDoseEvents, findOverduePendingEvents, updateDoseEventById } from '../repositories/doseEventRepository.js';
 import { findActiveCaregiversByPatient } from '../repositories/linkRepository.js';
-import { createAlert } from '../repositories/alertRepository.js';
+import { createAlert, countConsecutiveMissedDoses, countMissedDosesInLastSevenDays, findClinicStaffIds, findExistingHighRiskAlert } from '../repositories/alertRepository.js';
 import { findUserById } from '../repositories/userRepository.js';
 import { calculateWeeklyRiskScores } from './riskService.js';
-import { sendPushToCaregiver, buildMissedDoseMessages, shouldEscalateToEmail } from './notificationService.js';
+import { sendPushToCaregiver, buildMissedDoseMessages, shouldEscalateToEmail, shouldCreateHighRiskAlert } from './notificationService.js';
 import { db } from '../config/db.js';
 import { mailer } from '../config/mailer.js';
 import { env } from '../config/env.js';
 import { decrypt } from '../utils/encrypt.js';
-import { countConsecutiveMissedDoses, countMissedDosesInLastSevenDays } from '../repositories/alertRepository.js';
 import { sendMissedDoseAlertEmail } from './emailService.js';
+import { DateTime } from 'luxon';
 
 const generateDailyDoseEvents = async (targetDate) => {
     console.log(`[CRON] Generating dose events for ${targetDate.toISOString().split('T')[0]}`);
 
     const medications = await findAllActiveMedications();
-    const dateStr = targetDate.toISOString().split('T')[0];
+
+    const dateStr = DateTime.fromJSDate(targetDate)
+        .setZone('Africa/Douala')
+        .toISODate();
 
     const eventsToCreate = [];
 
@@ -26,7 +29,14 @@ const generateDailyDoseEvents = async (targetDate) => {
         if (med.end_date && dateStr > med.end_date) continue;
 
         for (const timeStr of med.times_of_day) {
-            const scheduledTime = new Date(`${dateStr}T${timeStr}:00.000Z`).toISOString();
+            const localDateTime = DateTime.fromISO(
+                `${dateStr}T${timeStr}`,
+                { zone: 'Africa/Douala' }
+            );
+
+            const scheduledTime = localDateTime
+                .toUTC()
+                .toISO();
 
             const existing = await findDoseEventByMedicationAndTime(med.id, scheduledTime);
             if (existing) continue;
@@ -108,6 +118,24 @@ const processOverdueDoses = async () => {
                     ).catch((emailErr) => {
                         console.error(`[CRON] Escalation email failed for ${caregiver.email}:`, emailErr.message);
                     });
+                }
+            }
+
+            if (shouldCreateHighRiskAlert(sevenDayMissed)) {
+                const existingAlert = await findExistingHighRiskAlert(event.patient_id);
+                if (!existingAlert) {
+                    const staffIds = await findClinicStaffIds();
+                    for (const staffId of staffIds) {
+                        await createAlert({
+                            patient_id: event.patient_id,
+                            caregiver_id: staffId,
+                            type: 'high_risk',
+                            message_en: `${patientName} has missed ${sevenDayMissed} doses in the last 7 days and has been flagged as high risk.`,
+                            message_fr: `${patientName} a manqué ${sevenDayMissed} doses au cours des 7 derniers jours et a été signalé comme à haut risque.`,
+                            missed_reason: 'no_response',
+                        });
+                    }
+                    console.log(`[CRON] High-risk alert created for patient ${event.patient_id} — ${sevenDayMissed} missed doses in 7 days`);
                 }
             }
         } catch (err) {

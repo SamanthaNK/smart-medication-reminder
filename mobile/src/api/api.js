@@ -97,4 +97,7 @@ export const getRiskScore = (patientId) =>
 export const getAlerts = () =>
     client.get('/alerts');
 
+export const getHighRiskAlerts = () =>
+    client.get('/alerts');
+
 export default client;
