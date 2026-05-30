@@ -28,7 +28,8 @@
         "RECORD_AUDIO",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -50,13 +51,13 @@
         {
           "sounds": []
         }
-      ],
-      "@react-native-voice/voice"
+      ]
     ],
     "extra": {
       "eas": {
-        "projectId": "bc1ebd63-0c15-445c-ae1f-448a24e42da9"
+        "projectId": "ae5f9a04-7e2d-4ea3-a1af-2c8b2aee0365"
       }
-    }
+    },
+    "owner": "samanthangong"
   }
 }

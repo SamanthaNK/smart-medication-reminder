@@ -116,39 +116,7 @@ export const speakMissedDosePrompt = async (medicationName) => {
     await speak(text, 'missed_dose_prompt');
 };
 
-export const listenForConfirmation = async (timeoutMs = 5000) => {
-    let Voice;
-    try {
-        Voice = (await import('@react-native-voice/voice')).default;
-    } catch {
-        console.log('[VOICE] @react-native-voice/voice not installed — voice input disabled');
-        return null;
-    }
-
-    return new Promise((resolve) => {
-        let resolved = false;
-
-        const finish = (result) => {
-            if (resolved) return;
-            resolved = true;
-            clearTimeout(timer);
-            Voice.stop().catch(() => { });
-            Voice.destroy().catch(() => { });
-            resolve(result);
-        };
-
-        const timer = setTimeout(() => finish('timeout'), timeoutMs);
-
-        Voice.onSpeechResults = (event) => {
-            const words = (event.value || []).map((w) => w.toLowerCase().trim());
-            console.log('[VOICE] Heard:', words);
-            const yesWords = ['yes', 'yeah', 'yep', 'yup', 'ok', 'okay', 'done', 'taken', 'oui'];
-            const noWords = ['no', 'nope', 'not', 'non', 'missed', 'skip'];
-            if (words.some((w) => yesWords.includes(w))) return finish('yes');
-            if (words.some((w) => noWords.includes(w))) return finish('no');
-        };
-
-        Voice.onSpeechError = () => finish(null);
-        Voice.start('en-US').catch(() => finish(null));
-    });
+export const listenForConfirmation = async () => {
+    console.log('[VOICE] Speech recognition removed for production build');
+    return null;
 };
